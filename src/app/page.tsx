@@ -1,65 +1,90 @@
-import Image from "next/image";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { NavBar } from "@/components/nav-bar";
+import { SiteFooter } from "@/components/site-footer";
+import { PlatformFeatures } from "@/components/platform-features";
+import { MiniAudit } from "@/components/landing/mini-audit";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: "Offlyn Token Audit MCP",
+  description:
+    "Pre-inference context audit for AI agents — cut token spend, catch PII, and measure resource efficiency across 9 Offlyn dimensions.",
+};
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <>
+      <NavBar />
+      <main className="mx-auto max-w-5xl px-4 py-10 md:px-6 md:py-14">
+        <header className="mb-10 max-w-3xl">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <span className="text-xs font-medium text-accent">MCP Server</span>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+            Offlyn Token Audit MCP
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-3 text-lg text-muted-foreground">
+            Context audit layer for AI agents — inspect every token before cloud
+            inference.
           </p>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">
+            Enterprise AI teams waste 40–60% of tokens on redundant context,
+            leak PII to cloud LLMs, and lack visibility into the full resource
+            footprint of AI workflows. Token Audit MCP analyzes prompts, RAG
+            chunks, tool outputs, and documents{" "}
+            <em>before</em> expensive inference — with metrics aligned to the{" "}
+            <a
+              href="https://github.com/offlyn-ai"
+              className="text-accent hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Offlyn.ai
+            </a>{" "}
+            efficiency framework and Green Software Foundation SCI for AI.
+          </p>
+        </header>
+
+        <MiniAudit />
+
+        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          {[
+            {
+              href: "/demo",
+              title: "Try it live",
+              desc: "Paste text or upload files. Stream real audit results and 9-dimension scorecard.",
+            },
+            {
+              href: "/architecture",
+              title: "How it works",
+              desc: "Interactive diagram — click nodes for code, files, and Vercel features.",
+            },
+            {
+              href: "/eval",
+              title: "Proof it works",
+              desc: "8-case evaluation suite with pass/fail rubric against live API.",
+            },
+          ].map((card) => (
+            <Link key={card.href} href={card.href} className="group block">
+              <Card className="h-full border-border bg-card/50 transition-all hover:border-accent/40 hover:shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base group-hover:text-accent">
+                    {card.title} →
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{card.desc}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <PlatformFeatures page="home" />
+        <SiteFooter />
       </main>
-    </div>
+    </>
   );
 }
