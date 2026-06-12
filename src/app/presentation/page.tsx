@@ -320,7 +320,7 @@ export default function PresentationPage() {
             Architecture Decisions
           </h2>
           <h3 className="mb-6 text-2xl font-bold text-foreground">
-            Options Considered & Why This Choice
+            Options Considered
           </h3>
           <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full text-left text-sm">
@@ -328,7 +328,6 @@ export default function PresentationPage() {
                 <tr>
                   <th className="px-4 py-3 font-medium text-foreground">Decision</th>
                   <th className="px-4 py-3 font-medium text-foreground">Options Considered</th>
-                  <th className="px-4 py-3 font-medium text-foreground">Why This Choice</th>
                 </tr>
               </thead>
               <tbody>
@@ -337,61 +336,51 @@ export default function PresentationPage() {
                     decision: "LLM Provider",
                     choice: "Ollama (local)",
                     options: "OpenAI API, Vercel AI Gateway, Anthropic, Ollama",
-                    why: "Zero cloud cost, PII never leaves device, proves local-first thesis. Model swappable in one line via AI SDK provider abstraction.",
                   },
                   {
                     decision: "Metric Computation",
                     choice: "Deterministic engine",
                     options: "LLM generates all metrics, hybrid (LLM + formulas), fully deterministic",
-                    why: "Small models hallucinate numbers. Splitting qualitative (LLM) from quantitative (formulas) gives reproducible Offlyn-verified results and cuts output tokens by 60%.",
                   },
                   {
                     decision: "Framework",
                     choice: "Next.js 16",
                     options: "Next.js, SvelteKit, Nuxt, plain Express",
-                    why: "App Router for Server Components (static shell, zero client JS). Streaming support. Proxy middleware for auth. Platform alignment with Vercel.",
                   },
                   {
                     decision: "LLM Integration",
                     choice: "AI SDK v6",
                     options: "Raw fetch to Ollama, LangChain, AI SDK",
-                    why: "Type-safe structured output via Output.object + Zod. Streaming built-in. Provider-agnostic — swap Ollama for GPT-4o with one line.",
                   },
                   {
                     decision: "Token Counting",
                     choice: "gpt-tokenizer",
                     options: "chars/4 heuristic, tiktoken (WASM), gpt-tokenizer",
-                    why: "Real BPE encoding gives exact counts. Runs client-side + server-side in <1ms. Heuristics can be off by 20-40%, which compounds in cost/carbon calculations.",
                   },
                   {
                     decision: "Auth",
                     choice: "Clerk",
                     options: "NextAuth, Clerk, custom JWT, no auth",
-                    why: "Invite-only signup with zero config. Protected routes via proxy middleware. Enterprise SSO (SAML) path for production. Drop-in React components.",
                   },
                   {
                     decision: "Schema Validation",
                     choice: "Zod",
                     options: "TypeScript types only, Joi, Yup, Zod",
-                    why: "Runtime validation for both API input AND LLM output. Direct integration with AI SDK Output.object. Single source of truth for types.",
                   },
                   {
                     decision: "Deployment Model",
                     choice: "Fluid Compute",
                     options: "Traditional serverless, Edge Functions, Fluid Compute, always-on container",
-                    why: "Active CPU pricing — only pay during request parsing + response, not the 5-15s idle wait on LLM inference. No cold start penalty for concurrent requests.",
                   },
                   {
                     decision: "Data Persistence",
                     choice: "localStorage",
                     options: "Vercel Postgres, Redis, localStorage, no persistence",
-                    why: "Sufficient for demo scope. No server DB cost or setup. Trade-off: no cross-device sync — would add Postgres for production multi-user deployment.",
                   },
                   {
                     decision: "Streaming UX",
                     choice: "Partial streaming + client enrichment",
                     options: "Wait for full response, stream raw text, stream structured + enrich client-side",
-                    why: "Findings appear in real-time. Efficiency scorecard updates live as each finding arrives. More complex state, but dramatically better perceived performance.",
                   },
                 ].map((row) => (
                   <tr key={row.decision} className="border-b border-border last:border-0">
@@ -400,7 +389,6 @@ export default function PresentationPage() {
                       <p className="mt-0.5 text-[11px] text-muted-foreground">{row.decision}</p>
                     </td>
                     <td className="px-4 py-3 align-top text-xs text-muted-foreground">{row.options}</td>
-                    <td className="px-4 py-3 align-top text-xs text-muted-foreground">{row.why}</td>
                   </tr>
                 ))}
               </tbody>
@@ -432,55 +420,6 @@ export default function PresentationPage() {
                 <p className="text-xs text-muted-foreground">{stat.sub}</p>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* Notes */}
-        <section className="mb-10 rounded-xl border border-border bg-secondary/20 p-6">
-          <h2 className="mb-4 text-sm font-bold text-foreground">Assessment Notes</h2>
-          <div className="grid gap-4 text-sm text-muted-foreground sm:grid-cols-2">
-            <div>
-              <p className="font-medium text-foreground">What&apos;s required:</p>
-              <ul className="mt-2 space-y-1.5">
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                  Deployed project (public URL)
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                  Readable code with decision comments
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                  At least one lightweight evaluation approach
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                  Uses the AI SDK
-                </li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">Guidance followed:</p>
-              <ul className="mt-2 space-y-1.5">
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 text-accent">•</span>
-                  AI tools used — but every decision is understood and defensible
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 text-accent">•</span>
-                  Small and deep &gt; large and murky
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 text-accent">•</span>
-                  Next.js chosen for platform alignment (not required)
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 text-accent">•</span>
-                  Present how you built it, not just what you built
-                </li>
-              </ul>
-            </div>
           </div>
         </section>
 
