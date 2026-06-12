@@ -1,4 +1,5 @@
-import type { AuditResult } from "@/lib/audit-schemas";
+import { modelOutputSchema, type AuditResult } from "@/lib/audit-schemas";
+import { enrichAuditResult } from "@/lib/compute-efficiency";
 
 export class AuditApiError extends Error {
   constructor(
@@ -11,6 +12,11 @@ export class AuditApiError extends Error {
   }
 }
 
+/**
+ * Non-streaming audit call for eval suite.
+ * The API returns a ModelOutput (slim: findings + summary).
+ * We enrich it client-side to produce a full AuditResult with efficiency metrics.
+ */
 export async function runAudit(context: string): Promise<AuditResult> {
   const res = await fetch("/api/audit", {
     method: "POST",
@@ -31,40 +37,19 @@ export async function runAudit(context: string): Promise<AuditResult> {
   }
 
   const text = await res.text();
+  let parsed: unknown;
   try {
-    return JSON.parse(text) as AuditResult;
+    parsed = JSON.parse(text);
   } catch {
     throw new Error("Invalid audit response — could not parse JSON");
   }
-}
 
-export async function runAuditStream(
-  context: string,
-  onPartial: (partial: string) => void,
-): Promise<AuditResult> {
-  const res = await fetch("/api/audit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ context }),
-  });
-
-  if (!res.ok) {
-    throw new AuditApiError(`Audit failed (${res.status})`, res.status);
+  const validated = modelOutputSchema.safeParse(parsed);
+  if (!validated.success) {
+    throw new Error(
+      `Audit response failed validation: ${validated.error.issues[0]?.message ?? "unknown"}`,
+    );
   }
 
-  const reader = res.body?.getReader();
-  if (!reader) throw new Error("No response stream");
-
-  const decoder = new TextDecoder();
-  let accumulated = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    const chunk = decoder.decode(value, { stream: true });
-    accumulated += chunk;
-    onPartial(accumulated);
-  }
-
-  return JSON.parse(accumulated) as AuditResult;
+  return enrichAuditResult(context, validated.data) as AuditResult;
 }

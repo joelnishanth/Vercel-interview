@@ -49,7 +49,7 @@ export const platformFeaturesByPage: Record<PlatformPage, PlatformFeature[]> = {
       name: "Vercel AI Gateway",
       category: "AI",
       description:
-        "gateway() routes to Claude Sonnet 4.5 with GPT-5.4 fallback and feature:token-audit cost tags.",
+        "Audit uses google/gemini-2.5-flash for structured output; chat uses meta/llama-3.1-8b for cheaper Q&A. Cost tags for attribution.",
       docsUrl: "https://vercel.com/docs/ai-gateway",
     },
     {

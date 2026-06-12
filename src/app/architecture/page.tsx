@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { NavBar } from "@/components/nav-bar";
 import { SiteFooter } from "@/components/site-footer";
 import { PlatformFeatures } from "@/components/platform-features";
-import { InteractiveDiagram } from "@/components/architecture/interactive-diagram";
+import { AuditFlowDiagram } from "@/components/prep/audit-flow-diagram";
+import { SchemaDiagram } from "@/components/architecture/schema-diagram";
 
 export const metadata: Metadata = {
   title: "Architecture | Offlyn Token Audit MCP",
@@ -16,15 +17,19 @@ export default function ArchitecturePage() {
       <main className="mx-auto max-w-5xl px-4 py-10 md:px-6 md:py-14">
         <header className="mb-8 max-w-2xl">
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-            Implementation Architecture
+            Architecture
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-base">
-            Click any node to see what it does, which files implement it, and
-            which Vercel platform feature powers it. Animated connections show
-            data flow from intake through AI Gateway to results.
+            How context flows from input through the audit pipeline to
+            structured results. Click any node to see details.
           </p>
         </header>
-        <InteractiveDiagram />
+
+        <div className="space-y-8">
+          <AuditFlowDiagram />
+          <SchemaDiagram />
+        </div>
+
         <PlatformFeatures page="architecture" />
         <SiteFooter />
       </main>

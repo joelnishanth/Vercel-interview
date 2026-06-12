@@ -3,6 +3,7 @@ import { NavBar } from "@/components/nav-bar";
 import { SiteFooter } from "@/components/site-footer";
 import { PlatformFeatures } from "@/components/platform-features";
 import { DemoWorkspace } from "@/components/demo/demo-workspace";
+import { MiniEval } from "@/components/demo/mini-eval";
 
 export const metadata: Metadata = {
   title: "Live Demo | Offlyn Token Audit MCP",
@@ -19,12 +20,13 @@ export default function DemoPage() {
             Live Audit Demo
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-base">
-            Submit real context via text paste or file upload. The audit pipeline
-            calls AI Gateway with structured output — findings plus Offlyn&apos;s
-            9 efficiency dimensions stream into the UI.
+            Submit real context via text paste or file upload. The LLM identifies
+            findings (waste, PII, weak citations) via AI SDK — efficiency metrics
+            are computed deterministically using the Offlyn methodology.
           </p>
         </header>
         <DemoWorkspace />
+        <MiniEval />
         <PlatformFeatures page="demo" />
         <SiteFooter />
       </main>

@@ -9,6 +9,7 @@ type AuditInputProps = {
   context: string;
   onContextChange: (value: string) => void;
   onRun: () => void;
+  onFileReady?: (text: string) => void;
   isLoading: boolean;
   mode: "text" | "files";
   onModeChange: (mode: "text" | "files") => void;
@@ -18,6 +19,7 @@ export function AuditInput({
   context,
   onContextChange,
   onRun,
+  onFileReady,
   isLoading,
   mode,
   onModeChange,
@@ -67,9 +69,10 @@ export function AuditInput({
         </>
       ) : (
         <FileDropZone
-          onContextChange={(text) =>
-            onContextChange(context ? `${context}\n\n${text}` : text)
-          }
+          onContextChange={(text) => {
+            onContextChange(text);
+            onFileReady?.(text);
+          }}
         />
       )}
 
@@ -78,7 +81,7 @@ export function AuditInput({
       <button
         type="button"
         onClick={onRun}
-        disabled={isLoading || !context.trim()}
+        disabled={isLoading}
         className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isLoading ? "Auditing via AI Gateway…" : "Run Audit"}

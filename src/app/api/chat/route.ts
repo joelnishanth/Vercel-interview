@@ -1,9 +1,16 @@
-import { APICallError, convertToModelMessages, gateway, streamText } from "ai";
+import { auth } from "@clerk/nextjs/server";
+import { convertToModelMessages, streamText } from "ai";
 import { chatSystemPrompt } from "@/lib/chat-context";
+import { getChatModel, formatGatewayErrorMessage } from "@/lib/ai-models";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { messages } = await req.json();
 
@@ -12,31 +19,17 @@ export async function POST(req: Request) {
     }
 
     const result = streamText({
-      model: gateway("anthropic/claude-sonnet-4.5"),
+      model: getChatModel(),
       system: chatSystemPrompt,
       messages: await convertToModelMessages(messages),
-      providerOptions: {
-        gateway: {
-          models: ["openai/gpt-5.4"],
-          tags: ["feature:implementation-chat"],
-        },
-      },
     });
 
     return result.toUIMessageStreamResponse();
   } catch (error) {
-    if (APICallError.isInstance(error)) {
-      if (error.statusCode === 402) {
-        return Response.json(
-          { error: "AI Gateway budget limit reached." },
-          { status: 402 },
-        );
-      }
-      if (error.statusCode === 429) {
-        return Response.json({ error: "Rate limited." }, { status: 429 });
-      }
-    }
     console.error("[chat]", error);
-    return Response.json({ error: "Chat unavailable." }, { status: 503 });
+    return Response.json(
+      { error: formatGatewayErrorMessage(error) },
+      { status: 503 },
+    );
   }
 }

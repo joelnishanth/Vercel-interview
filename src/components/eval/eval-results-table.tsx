@@ -15,13 +15,14 @@ const statusStyles: Record<EvalResult["status"], string> = {
 export function EvalResultsTable({ results }: { results: EvalResult[] }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full min-w-[640px] text-left text-sm">
+      <table className="w-full min-w-[720px] text-left text-sm">
         <thead className="border-b border-border bg-secondary/30">
           <tr>
             <th className="px-4 py-3 font-medium text-foreground">Test</th>
             <th className="px-4 py-3 font-medium text-foreground">Status</th>
             <th className="px-4 py-3 font-medium text-foreground">Expected</th>
             <th className="px-4 py-3 font-medium text-foreground">Actual</th>
+            <th className="px-4 py-3 font-medium text-foreground">Reason</th>
             <th className="px-4 py-3 font-medium text-foreground">Ms</th>
           </tr>
         </thead>
@@ -36,21 +37,20 @@ export function EvalResultsTable({ results }: { results: EvalResult[] }) {
                 )}
               >
                 {row.status}
-                {row.error && (
-                  <span className="mt-0.5 block text-xs font-normal">
-                    {row.error}
-                  </span>
-                )}
               </td>
               <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                 {row.testCase.expectClean
                   ? "clean"
-                  : row.testCase.expectedTypes.join(", ")}
+                  : `${row.testCase.expectedTypes.join(", ")} (${row.testCase.expectedSeverity ?? "any"})`}
               </td>
               <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                 {row.actualTypes.length > 0
                   ? row.actualTypes.join(", ")
                   : row.overallRisk ?? "—"}
+                {row.actualSeverity && ` (${row.actualSeverity})`}
+              </td>
+              <td className="max-w-[240px] px-4 py-3 text-xs text-muted-foreground">
+                {row.reason ?? row.error ?? "—"}
               </td>
               <td className="px-4 py-3 text-muted-foreground">
                 {row.durationMs ?? "—"}

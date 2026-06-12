@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const ACCEPTED_EXTENSIONS = [
@@ -51,6 +51,8 @@ function isAccepted(file: File): boolean {
 export function FileDropZone({ onContextChange }: FileDropZoneProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [dragging, setDragging] = useState(false);
+  const onContextChangeRef = useRef(onContextChange);
+  onContextChangeRef.current = onContextChange;
 
   const updateCombined = useCallback(
     (nextFiles: UploadedFile[]) => {
@@ -58,9 +60,9 @@ export function FileDropZone({ onContextChange }: FileDropZoneProps) {
         .filter((f) => f.status === "ready")
         .map((f) => `\n--- ${f.name} ---\n${f.text}`)
         .join("\n\n");
-      onContextChange(combined);
+      onContextChangeRef.current(combined);
     },
-    [onContextChange],
+    [],
   );
 
   const processFiles = useCallback(
@@ -84,16 +86,19 @@ export function FileDropZone({ onContextChange }: FileDropZoneProps) {
         try {
           const isPdf = file.name.toLowerCase().endsWith(".pdf");
           const text = isPdf ? await readPdfFile(file) : await readTextFile(file);
-          setFiles((prev) => {
-            const idx = prev.findIndex(
-              (f) => f.name === file.name && f.status === "loading",
-            );
-            if (idx === -1) return prev;
-            const next = [...prev];
-            next[idx] = { name: file.name, text, status: "ready" };
-            updateCombined(next);
-            return next;
+          const updatedFiles = await new Promise<UploadedFile[]>((resolve) => {
+            setFiles((prev) => {
+              const idx = prev.findIndex(
+                (f) => f.name === file.name && f.status === "loading",
+              );
+              if (idx === -1) { resolve(prev); return prev; }
+              const next = [...prev];
+              next[idx] = { name: file.name, text, status: "ready" };
+              resolve(next);
+              return next;
+            });
           });
+          updateCombined(updatedFiles);
         } catch (err) {
           setFiles((prev) => {
             const idx = prev.findIndex(
