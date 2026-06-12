@@ -334,7 +334,7 @@ export default async function PrepPage() {
               ],
               [
                 "Fluid Compute (Active CPU pricing)",
-                "LLM calls are I/O-bound (5-15s wait). Only billed for ~200ms of actual CPU, not the full duration",
+                "3 Node.js API routes (TypeScript). LLM calls wait 5-15s but CPU work is ~200ms. Billed for CPU only, not wall clock. Instances reused across concurrent requests",
                 "FinOps",
               ],
               [
@@ -478,7 +478,7 @@ export default async function PrepPage() {
             rows={[
               ["AI SDK v6", "/api/audit, /api/chat", "Structured output + streaming with Ollama provider"],
               ["Ollama (via AI SDK)", "All LLM calls", "Local inference — zero cloud dependency, PII stays on-device"],
-              ["Fluid Compute", "API routes", "Active CPU pricing (don't pay while waiting on LLM)"],
+              ["Fluid Compute", "/api/audit, /api/chat, /api/parse-pdf", "Node.js runtime, Active CPU pricing, instance reuse across concurrent requests, maxDuration: 120s"],
               ["Server Components", "Page shells", "Zero client JS for static content"],
               ["Client Components", "Interactive islands", "Audit results, schema diagram, live annotated text, flow viz"],
               ["gpt-tokenizer", "Client + server", "Real BPE token counts — same tokenizer as GPT models"],
@@ -508,6 +508,156 @@ export default async function PrepPage() {
               </li>
               <li>
                 <span className="font-medium text-foreground">Vercel Workflow</span> — Single-request audit doesn&apos;t need durable steps; would add for batch/enterprise (see section 10)
+              </li>
+            </ul>
+          </div>
+        </Section>
+
+        {/* 7b. Fluid Compute Deep-Dive */}
+        <Section title="7b. Fluid Compute — What Each Route Actually Does">
+          <p className="mb-4 text-sm text-muted-foreground">
+            All 3 API routes are <span className="font-medium text-foreground">Vercel Functions running on Node.js</span> (TypeScript).
+            Fluid Compute gives them Active CPU pricing, instance reuse, and configurable timeouts.
+          </p>
+
+          <div className="space-y-4">
+            {[
+              {
+                route: "/api/audit",
+                maxDuration: "120s",
+                description: "The core audit pipeline — longest running function",
+                cpu: [
+                  "auth() — Clerk session validation (~5ms)",
+                  "req.json() — parse request body (~1ms)",
+                  "Zod safeParse — validate context against schema (~1ms)",
+                  "countTokens() — real BPE tokenization via gpt-tokenizer (~2ms for 10K chars)",
+                  "System prompt assembly — inject token count into prompt (~0ms)",
+                  "Response serialization — toTextStreamResponse() headers (~1ms)",
+                ],
+                io: [
+                  "streamText() → Ollama — LLM inference (5–30s depending on context length)",
+                  "Streaming response — chunks sent back to client as LLM generates (~5–30s, overlaps with above)",
+                ],
+                totalCpu: "~10ms",
+                totalWall: "5–30s",
+                savings: "You pay for ~10ms of CPU. Without Fluid Compute, you'd pay for 5–30s of wall clock.",
+              },
+              {
+                route: "/api/chat",
+                maxDuration: "120s",
+                description: "Implementation assistant — conversational Q&A",
+                cpu: [
+                  "auth() — Clerk session validation (~5ms)",
+                  "req.json() — parse message array (~1ms)",
+                  "convertToModelMessages() — format chat history (~1ms)",
+                ],
+                io: [
+                  "streamText() → Ollama — LLM generates response (3–15s)",
+                  "toUIMessageStreamResponse() — stream to client (3–15s, overlaps)",
+                ],
+                totalCpu: "~7ms",
+                totalWall: "3–15s",
+                savings: "Chat messages are shorter, but still I/O-dominated. CPU is <1% of wall time.",
+              },
+              {
+                route: "/api/parse-pdf",
+                maxDuration: "30s",
+                description: "PDF text extraction — mostly CPU-bound",
+                cpu: [
+                  "auth() — Clerk session validation (~5ms)",
+                  "req.formData() — parse multipart upload (~2ms)",
+                  "File validation — type check, size check <10MB (~0ms)",
+                  "Buffer.from(arrayBuffer) — copy file to memory (~5ms for 5MB)",
+                  "pdf-parse — extract text from PDF pages (~50–500ms depending on size)",
+                ],
+                io: [
+                  "Minimal — no external API calls, all local computation",
+                ],
+                totalCpu: "~60–510ms",
+                totalWall: "~60–510ms",
+                savings: "This route is CPU-bound, so Fluid Compute billing ≈ wall clock. But it still benefits from instance reuse.",
+              },
+            ].map((route) => (
+              <div key={route.route} className="rounded-xl border border-border p-4">
+                <div className="mb-2 flex items-center gap-3">
+                  <code className="rounded bg-accent/10 px-2 py-1 text-sm font-semibold text-accent">
+                    {route.route}
+                  </code>
+                  <span className="rounded bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    maxDuration: {route.maxDuration}
+                  </span>
+                </div>
+                <p className="mb-3 text-xs text-muted-foreground">{route.description}</p>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-green-600 dark:text-green-400">
+                      CPU Work (billed)
+                    </p>
+                    <ul className="space-y-0.5 text-[11px] text-muted-foreground">
+                      {route.cpu.map((item) => (
+                        <li key={item} className="flex items-start gap-1.5">
+                          <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-green-500/60" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-1.5 text-[11px] font-medium text-green-600 dark:text-green-400">
+                      Total CPU: {route.totalCpu}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                      I/O Wait (not billed)
+                    </p>
+                    <ul className="space-y-0.5 text-[11px] text-muted-foreground">
+                      {route.io.map((item) => (
+                        <li key={item} className="flex items-start gap-1.5">
+                          <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-amber-500/60" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                      Total wall: {route.totalWall}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-accent">
+                    Savings
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{route.savings}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-lg border border-border bg-secondary/30 p-4">
+            <p className="text-xs font-medium uppercase tracking-wider text-foreground">
+              Key Fluid Compute Behaviors In This Project
+            </p>
+            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+              <li>
+                <span className="font-medium text-foreground">Runtime:</span>{" "}
+                Node.js (TypeScript compiled at build) — not Edge, not Bun
+              </li>
+              <li>
+                <span className="font-medium text-foreground">Active CPU pricing:</span>{" "}
+                Charged for CPU time only — the 5–30s LLM wait is free
+              </li>
+              <li>
+                <span className="font-medium text-foreground">Instance reuse:</span>{" "}
+                10 concurrent audit requests share function instances instead of cold-starting 10 containers
+              </li>
+              <li>
+                <span className="font-medium text-foreground">maxDuration: 120s:</span>{" "}
+                Exported from each route to keep functions alive for long LLM inference (default is 30s on Hobby)
+              </li>
+              <li>
+                <span className="font-medium text-foreground">Streaming:</span>{" "}
+                toTextStreamResponse() keeps the connection open while Ollama generates — no buffering the full response
               </li>
             </ul>
           </div>
@@ -624,7 +774,7 @@ export default async function PrepPage() {
               },
               {
                 q: "How does Fluid Compute help here?",
-                a: "LLM inference is I/O-bound — the function waits 5–15 seconds for the model. With Active CPU pricing, you only pay for CPU time during request parsing and response processing, not the idle wait.",
+                a: "All 3 API routes run as Vercel Functions on Node.js (TypeScript). LLM calls are I/O-bound — the function waits 5–15s for Ollama. With Fluid Compute's Active CPU pricing, you only pay for the ~200ms of actual CPU work (auth check, Zod validation, BPE token counting, response serialization), not the idle I/O wait. Fluid Compute also reuses function instances across concurrent requests — so 10 users auditing simultaneously share instances instead of cold-starting 10 separate containers.",
               },
               {
                 q: "Why gpt-tokenizer instead of estimating tokens?",

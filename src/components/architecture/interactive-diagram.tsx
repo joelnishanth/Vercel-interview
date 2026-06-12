@@ -53,8 +53,8 @@ const nodeMap = Object.fromEntries(
 
 const mainFlow = ["intake", "audit-api", "ai-sdk", "gateway", "providers", "ui"];
 const secondaryFlows = [
-  { label: "Chat path", ids: ["chat", "gateway"], icon: "💬" },
-  { label: "Eval path", ids: ["eval", "audit-api"], icon: "🧪" },
+  { label: "Chat path", ids: ["chat", "gateway"] },
+  { label: "Eval path", ids: ["eval", "audit-api"] },
 ];
 
 function PulsingDot({ color, delay = 0 }: { color: string; delay?: number }) {
@@ -240,7 +240,6 @@ export function InteractiveDiagram() {
               className="rounded-lg border border-dashed border-border/60 bg-secondary/30 p-3"
             >
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm">{flow.icon}</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {flow.label}
                 </span>

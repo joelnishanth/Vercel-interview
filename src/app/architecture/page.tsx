@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { PlatformFeatures } from "@/components/platform-features";
 import { AuditFlowDiagram } from "@/components/prep/audit-flow-diagram";
 import { SchemaDiagram } from "@/components/architecture/schema-diagram";
+import { WorkflowDiagram } from "@/components/architecture/workflow-diagram";
 
 export const metadata: Metadata = {
   title: "Architecture | Offlyn Token Audit MCP",
@@ -28,6 +29,7 @@ export default function ArchitecturePage() {
         <div className="space-y-8">
           <AuditFlowDiagram />
           <SchemaDiagram />
+          <WorkflowDiagram />
         </div>
 
         <PlatformFeatures page="architecture" />
