@@ -1,30 +1,31 @@
 import { ollama } from "ollama-ai-provider-v2";
 
-/** Local Ollama model for audit — runs entirely on-device */
-export const AUDIT_MODEL = "llama3.2";
+const isLocal = process.env.NODE_ENV === "development";
 
-/** Local Ollama model for chat */
-export const CHAT_MODEL = "llama3.2";
+const LOCAL_MODEL = "llama3.2";
+const GATEWAY_AUDIT_MODEL = "google/gemini-2.5-flash";
+const GATEWAY_CHAT_MODEL = "google/gemini-2.5-flash";
 
-/** Create the Ollama model instance for audit */
+/** Ollama locally, AI Gateway (Gemini) in production */
 export function getAuditModel() {
-  return ollama(AUDIT_MODEL);
+  return isLocal ? ollama(LOCAL_MODEL) : GATEWAY_AUDIT_MODEL;
 }
 
-/** Create the Ollama model instance for chat */
+/** Ollama locally, AI Gateway (Gemini) in production */
 export function getChatModel() {
-  return ollama(CHAT_MODEL);
+  return isLocal ? ollama(LOCAL_MODEL) : GATEWAY_CHAT_MODEL;
 }
 
 export function formatGatewayErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
 
-  if (message.includes("ECONNREFUSED") || message.includes("fetch failed")) {
-    return "Ollama is not running. Start it with: ollama serve";
-  }
-
-  if (message.includes("model") && message.includes("not found")) {
-    return `Model not found. Pull it with: ollama pull ${AUDIT_MODEL}`;
+  if (isLocal) {
+    if (message.includes("ECONNREFUSED") || message.includes("fetch failed")) {
+      return "Ollama is not running. Start it with: ollama serve";
+    }
+    if (message.includes("model") && message.includes("not found")) {
+      return `Model not found. Pull it with: ollama pull ${LOCAL_MODEL}`;
+    }
   }
 
   if (

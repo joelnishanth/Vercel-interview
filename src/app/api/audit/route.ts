@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { Output, streamText } from "ai";
 import { modelOutputSchema } from "@/lib/audit-schemas";
-import { getAuditModel } from "@/lib/ai-models";
+import { getAuditModel, formatGatewayErrorMessage } from "@/lib/ai-models";
 import { countTokens } from "@/lib/token-utils";
 
 // ── Design decision: Fluid Compute for long-running LLM calls ──────────
@@ -80,20 +80,8 @@ export async function POST(req: Request) {
     return result.toTextStreamResponse();
   } catch (error) {
     console.error("[audit]", error);
-    const message = error instanceof Error ? error.message : String(error);
-
-    // ── Design decision: actionable error messages ──────────────────────
-    // Provider-specific errors are translated into user-facing instructions.
-    // The client displays these directly — no generic "something went wrong".
-    if (message.includes("ECONNREFUSED")) {
-      return Response.json(
-        { error: "Ollama is not running. Start with: ollama serve" },
-        { status: 503 },
-      );
-    }
-
     return Response.json(
-      { error: "Audit service unavailable. Ensure Ollama is running." },
+      { error: formatGatewayErrorMessage(error) },
       { status: 503 },
     );
   }
